@@ -5,8 +5,8 @@ import L, { LatLngExpression } from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
-import { useEffect, useRef } from "react";
+import { MapContainer, Marker, Popup, TileLayer, GeoJSON } from "react-leaflet";
+import { useEffect, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 
 //delete L.Icon.Default.prototype._getIconUrl;
@@ -40,6 +40,7 @@ type MapProps = {
 const Map = (props: MapProps) => {
   const mapRef = useRef<L.Map>(null)
   const markers: (L.CircleMarker | L.Marker)[] = [];
+  const [geojsonData, setGeojsonData] = useState(null);
   
   const setMarker = () => {
     props.markers?.map((mark, index) => {
@@ -92,7 +93,23 @@ const Map = (props: MapProps) => {
   useEffect(() => {
     clearMarker();
     setMarker();
+    fetch('./data/14kanagawa250m.geojson')
+      .then(response => response.json())
+      .then(data => setGeojsonData(data));
   },[props.markers]);
+  
+  function meshStyle(feature: any) {
+    const value = feature.properties.CO2;
+    const color = value > 500 ? 'red' : value > 400 ? 'green' : 'blue';
+
+    return {
+      fillColor: color,
+      weight: 2,
+      opacity: 1,
+      color: 'white',
+      fillOpacity: 0.3
+    };
+  };
 
   return (
     <MapContainer
@@ -125,6 +142,7 @@ const Map = (props: MapProps) => {
           ランドマークタワー
         </Popup>
       </Marker>
+      {geojsonData && <GeoJSON data={geojsonData} style={meshStyle}/>}
     </MapContainer>
   );
 };
